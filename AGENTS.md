@@ -1,10 +1,12 @@
 # AGENTS.md — star_shooting
 
 Godot 4.3 製、縦画面(480x640)の2D見下ろし弾幕シューティング。
-すべてのシーン(.tscn)・スクリプト(.gd)・project.godot はエディタのGUI操作ではなく、テキストとして直接記述して作成している。
+すべてのシーン(.tscn)・スクリプト(C# .cs)・project.godot はエディタのGUI操作ではなく、テキストとして直接記述して作成している。
 
 ## 実行方法
 
+- スクリプトは C#(2026-10-07 に GDScript から移行)。**Godot 4.3 の .NET 版エディタ**と .NET 8 SDK が必要。初回はエディタ右上の「ビルド」でC#をビルドしてから再生する。
+- C# プロジェクト: `star_shooting.csproj` / `star_shooting.sln`(Godot.NET.Sdk 4.3.0, net8.0)。
 - `project.godot` の `run/main_scene` は `res://scenes/UI/TitleScreen.tscn`。
 - エディタで再生(▶)するとタイトル画面 → Z/Space/ゲームパッドAボタンでゲーム本編(`res://scenes/Main.tscn`)へ遷移。
 - 新規アセット(.svg)を追加した直後は `.import` キャッシュが無くロード時にパースエラーになることがあるため、一度エディタで開いて自動インポートさせてから実行確認すること。
@@ -15,7 +17,7 @@ Godot 4.3 製、縦画面(480x640)の2D見下ろし弾幕シューティング�
 project.godot          エンジン設定・入力マップ・衝突レイヤー名
 icon.svg                プロジェクトアイコン
 assets/                 SVGアセット(自機・敵・弾・爆発フラッシュ)
-scripts/                GDScript本体
+scripts/                C#スクリプト本体
 scenes/
   Main.tscn              ゲーム本編(背景・自機・StageDirector・HUD)
   Player.tscn             自機
@@ -27,25 +29,25 @@ scenes/
 
 ## 主要システム
 
-- **Global (autoload, `scripts/Global.gd`)**: スコア・残機を保持。`score_changed` / `lives_changed` シグナルでHUDへ通知。
-- **Player (`scripts/Player.gd` + `scenes/Player.tscn`)**: Area2Dベース。移動・集中(低速)モード・自動連射・被弾判定・無敵点滅を管理。
-- **Bullet (`scripts/Bullet.gd`)**: 自機弾・敵弾共通の直進弾スクリプト。画面外に出たら自動でqueue_free。
+- **Global (autoload, `scripts/Global.cs`)**: スコア・残機を保持。`ScoreChanged` / `LivesChanged` シグナル(`Global.Instance` 経由でアクセス)でHUDへ通知。
+- **Player (`scripts/Player.cs` + `scenes/Player.tscn`)**: Area2Dベース。移動・集中(低速)モード・自動連射・被弾判定・無敵点滅を管理。
+- **Bullet (`scripts/Bullet.cs`)**: 自機弾・敵弾共通の直進弾スクリプト。画面外に出たら自動でqueue_free。
 - **Enemy 階層**:
-  - `scripts/Enemy.gd`: 基底クラス。HP・移動パターン(`straight` / `sine` / `hover`)・被弾処理・撃破時の爆発とスコア加算。
-  - `scripts/EnemyShooter.gd`: Enemyを継承し弾幕パターン(`aimed` / `radial` / `spiral` / `spread`)を追加。
-  - `scripts/Boss.gd`: EnemyShooterを継承。HPに応じて`phase_patterns`配列の弾幕パターンへ切り替わる多段階ボス。HP変化を`hp_changed`シグナルでHUDのボスゲージへ反映。
-  - `scripts/MultiJointBoss.gd`(`scenes/Enemies/SerpentBoss.tscn`): Bossを継承した多関節(蛇型)ボス。頭の`global_position`を毎フレーム`history`配列に記録し、`scripts/BossSegment.gd`の胴体セグメント(`scenes/Enemies/BossSegment.tscn`、個別HPを持ち被弾で破壊可能)が`segment_gap`フレーム分ディレイした履歴座標を追従することで、頭に連なってうねる胴体を実現(古典的な「先頭追従」スネーク方式)。`_update_movement`をオーバーライドし、進入後はLissajous的な正弦波軌道で画面上部を漂う。頭のHPが尽きる(`die()`)と残ったセグメントもまとめて解放してボス撃破。HPバー等のシグナルはBossからそのまま継承。
-- **StageDirector (`scripts/StageDirector.gd`)**: `await get_tree().create_timer()` を使ったコルーチンでウェーブをタイムライン管理し、最後に`SerpentBoss`(多関節ボス)を出現させる。
-- **HUD (`scripts/HUD.gd` + `scenes/UI/HUD.tscn`)**: スコア・残機表示、ボス出現時のみ表示されるHPバー。
-- **画面遷移**: `TitleScreen` → `Main` → (ボス撃破) `ClearScreen` → `TitleScreen` に戻る。残機0で自機が撃墜されても`Main`シーンからは遷移せず、`StageDirector`は止めずに動かし続けたまま`GameOverOverlay`(`scripts/GameOverOverlay.gd` + `scenes/UI/GameOverOverlay.tscn`)を`Main`に追加でオーバーレイ表示する。自機が消えただけでステージが進行し続ける昔のアーケード/コンシューマー機の「ゲームオーバー後も敵がプレイを続ける」演出。ボタン入力で`TitleScreen`へ戻る。
+  - `scripts/Enemy.cs`: 基底クラス。HP・移動パターン(enum `MovementPattern`: Straight / Sine / Hover)・被弾処理・撃破時の爆発とスコア加算。
+  - `scripts/EnemyShooter.cs`: Enemyを継承し弾幕パターン(enum `ShotPattern`: Aimed / Radial / Spiral / Spread)を追加。
+  - `scripts/Boss.cs`: EnemyShooterを継承。HPに応じて`phase_patterns`配列の弾幕パターンへ切り替わる多段階ボス。HP変化を`hp_changed`シグナルでHUDのボスゲージへ反映。
+  - `scripts/MultiJointBoss.cs`(`scenes/Enemies/SerpentBoss.tscn`): Bossを継承した多関節(蛇型)ボス。頭の`global_position`を毎フレーム`history`配列に記録し、`scripts/BossSegment.cs`の胴体セグメント(`scenes/Enemies/BossSegment.tscn`、個別HPを持ち被弾で破壊可能)が`segment_gap`フレーム分ディレイした履歴座標を追従することで、頭に連なってうねる胴体を実現(古典的な「先頭追従」スネーク方式)。`_update_movement`をオーバーライドし、進入後はLissajous的な正弦波軌道で画面上部を漂う。頭のHPが尽きる(`die()`)と残ったセグメントもまとめて解放してボス撃破。HPバー等のシグナルはBossからそのまま継承。
+- **StageDirector (`scripts/StageDirector.cs`)**: `async`/`await ToSignal(GetTree().CreateTimer(...))` によるコルーチンでウェーブをタイムライン管理し、最後に`SerpentBoss`(多関節ボス)を出現させる。
+- **HUD (`scripts/HUD.cs` + `scenes/UI/HUD.tscn`)**: スコア・残機表示、ボス出現時のみ表示されるHPバー。
+- **画面遷移**: `TitleScreen` → `Main` → (ボス撃破) `ClearScreen` → `TitleScreen` に戻る。残機0で自機が撃墜されても`Main`シーンからは遷移せず、`StageDirector`は止めずに動かし続けたまま`GameOverOverlay`(`scripts/GameOverOverlay.cs` + `scenes/UI/GameOverOverlay.tscn`)を`Main`に追加でオーバーレイ表示する。自機が消えただけでステージが進行し続ける昔のアーケード/コンシューマー機の「ゲームオーバー後も敵がプレイを続ける」演出。ボタン入力で`TitleScreen`へ戻る。
 
 ## エフェクト
 
 - 敵の被弾: `Enemy._flash_hit()` でスプライトを赤くフラッシュ(Tweenで白に戻す)。
 - 敵への着弾: `scenes/Effects/HitSpark.tscn`(黄白の小さな火花)を着弾座標に生成。
 - 自機の発射: `Player.tscn` の `MuzzleFlash`(CPUParticles2D)をショット中のみ`emitting = true`。
-- 自機の被弾(通常): `scenes/Effects/PlayerHitSpark.tscn`(`scripts/PlayerHitEffect.gd`)。ジグザグの稲妻(Line2D)が弾けて消える演出+火花パーティクル。
-- 自機の被弾(残機0/撃墜時): `scenes/Effects/PlayerExplosion.tscn`(`scripts/PlayerExplosion.gd`)。拡大フェードするフラッシュ(`assets/flash_circle.svg`)+大きめの爆炎・火花パーティクルの組み合わせで、通常の敵撃破エフェクトより視認性の高い爆発にしてある。
+- 自機の被弾(通常): `scenes/Effects/PlayerHitSpark.tscn`(`scripts/PlayerHitEffect.cs`)。ジグザグの稲妻(Line2D)が弾けて消える演出+火花パーティクル。
+- 自機の被弾(残機0/撃墜時): `scenes/Effects/PlayerExplosion.tscn`(`scripts/PlayerExplosion.cs`)。拡大フェードするフラッシュ(`assets/flash_circle.svg`)+大きめの爆炎・火花パーティクルの組み合わせで、通常の敵撃破エフェクトより視認性の高い爆発にしてある。
 
 ## 操作方法
 
@@ -69,5 +71,7 @@ scenes/
 
 ## 既知の注意点
 
-- GDScriptの組み込み関数名(`exp()` 等)をローカル変数名に使うとコンパイルエラーになる。過去に `Enemy.gd` で `exp` という変数名を使ってしまい、スクリプトチェーン全体がコンパイル不能になったことがある(修正済み)。同様の命名は避けること。
+- C# では `.tscn` に保存されるエクスポートプロパティ名が C# のメンバー名(PascalCase、例: `MaxHp`)になる。スクリプトのプロパティ名を変えたら `.tscn` 側も合わせること。
+- C# の `async void` 内で `await` した後は、シーン遷移でノードが解放されている可能性がある。`IsInstanceValid(this) && IsInsideTree()` を確認してから処理を続けること(StageDirector / Player / Main で実施済み)。
+- Godot 4.3 の C# は Web(HTML5)エクスポート非対応。
 - 新規SVGアセットは初回インポート前だと `ext_resource` の読み込みに失敗する。アセット追加後は一度エディタを起動してインポートを走らせてから動作確認すること。

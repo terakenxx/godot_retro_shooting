@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3]
 
-[ext_resource type="Script" path="res://scripts/BossSegment.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/BossSegment.cs" id="1"]
 [ext_resource type="Texture2D" path="res://assets/boss_segment.svg" id="2"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_1"]
@@ -12,8 +12,8 @@ collision_mask = 2
 monitoring = true
 monitorable = true
 script = ExtResource("1")
-max_hp = 18
-score_value = 150
+MaxHp = 18
+ScoreValue = 150
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("2")

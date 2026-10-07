@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3]
 
-[ext_resource type="Script" path="res://scripts/Bullet.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/Bullet.cs" id="1"]
 [ext_resource type="Texture2D" path="res://assets/bullet_player.svg" id="2"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
@@ -12,8 +12,8 @@ collision_mask = 0
 monitoring = false
 monitorable = true
 script = ExtResource("1")
-speed = 700.0
-damage = 1
+Speed = 700.0
+Damage = 1
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("2")

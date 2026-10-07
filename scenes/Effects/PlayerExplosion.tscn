@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://scripts/PlayerExplosion.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/PlayerExplosion.cs" id="1"]
 [ext_resource type="Texture2D" path="res://assets/flash_circle.svg" id="2"]
 
 [node name="PlayerExplosion" type="Node2D"]

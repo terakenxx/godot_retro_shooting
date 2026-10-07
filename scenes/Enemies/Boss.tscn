@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3]
 
-[ext_resource type="Script" path="res://scripts/Boss.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/Boss.cs" id="1"]
 [ext_resource type="Texture2D" path="res://assets/boss.svg" id="2"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_1"]
@@ -12,12 +12,12 @@ collision_mask = 2
 monitoring = true
 monitorable = true
 script = ExtResource("1")
-max_hp = 400
-score_value = 5000
-move_speed = 60.0
-fire_interval = 1.0
-bullet_speed = 150.0
-bullet_count = 12
+MaxHp = 400
+ScoreValue = 5000
+MoveSpeed = 60.0
+FireInterval = 1.0
+BulletSpeed = 150.0
+BulletCount = 12
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("2")
