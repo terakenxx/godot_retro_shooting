@@ -1,0 +1,56 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/GameOverOverlay.cs" id="1"]
+
+[node name="GameOverOverlay" type="CanvasLayer"]
+script = ExtResource("1")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="DimBox" type="ColorRect" parent="Control"]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 260.0
+offset_right = 460.0
+offset_bottom = 430.0
+color = Color(0, 0, 0, 0.55)
+
+[node name="GameOverLabel" type="Label" parent="Control"]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 276.0
+offset_right = 460.0
+offset_bottom = 320.0
+theme_override_font_sizes/font_size = 30
+theme_override_colors/font_color = Color(1, 0.25, 0.25, 1)
+horizontal_alignment = 1
+text = "GAME OVER"
+
+[node name="ScoreLabel" type="Label" parent="Control"]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 334.0
+offset_right = 460.0
+offset_bottom = 384.0
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+horizontal_alignment = 1
+text = "SCORE: 000000"
+
+[node name="HintLabel" type="Label" parent="Control"]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 396.0
+offset_right = 460.0
+offset_bottom = 420.0
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+horizontal_alignment = 1
+text = "PRESS Z OR SPACE TO RETURN TO TITLE"

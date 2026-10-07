@@ -1,0 +1,39 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/PlayerExplosion.cs" id="1"]
+[ext_resource type="Texture2D" path="res://assets/flash_circle.svg" id="2"]
+
+[node name="PlayerExplosion" type="Node2D"]
+script = ExtResource("1")
+
+[node name="FlashSprite" type="Sprite2D" parent="."]
+texture = ExtResource("2")
+scale = Vector2(0.3, 0.3)
+
+[node name="MainBurst" type="CPUParticles2D" parent="."]
+emitting = false
+amount = 40
+lifetime = 0.9
+one_shot = true
+explosiveness = 1.0
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 80.0
+initial_velocity_max = 260.0
+scale_amount_min = 4.0
+scale_amount_max = 8.0
+color = Color(1, 0.55, 0.15, 1)
+
+[node name="Sparks" type="CPUParticles2D" parent="."]
+emitting = false
+amount = 24
+lifetime = 0.5
+one_shot = true
+explosiveness = 1.0
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 150.0
+initial_velocity_max = 320.0
+scale_amount_min = 2.0
+scale_amount_max = 4.0
+color = Color(1, 0.95, 0.6, 1)
