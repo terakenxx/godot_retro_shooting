@@ -31,7 +31,7 @@ public partial class EnemyShooter : Enemy
 	public override void _Process(double delta)
 	{
 		base._Process(delta);
-		if (Entering)
+		if (Entering || Retreating)
 			return;
 		_fireTimer -= (float)delta;
 		if (_fireTimer <= 0.0f)
