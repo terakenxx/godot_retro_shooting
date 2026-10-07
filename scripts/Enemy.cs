@@ -27,6 +27,7 @@ public partial class Enemy : Area2D
 
 	protected float Elapsed;
 	protected bool Entering = true;
+	protected bool Retreating;
 	protected float BaseX;
 	protected Sprite2D Sprite;
 	private Tween _hitTween;
@@ -51,6 +52,11 @@ public partial class Enemy : Area2D
 
 	protected virtual void UpdateMovement(float delta)
 	{
+		if (Retreating)
+		{
+			Position += Vector2.Up * MoveSpeed * 2.0f * delta;
+			return;
+		}
 		switch (MovementPattern)
 		{
 			case MovementPattern.Straight:
@@ -79,8 +85,25 @@ public partial class Enemy : Area2D
 		}
 	}
 
+	// 画面上方へ退場させる。画面外に出たら OnRetreated() の後に解放される。
+	public void Retreat()
+	{
+		Entering = false;
+		Retreating = true;
+	}
+
+	protected virtual void OnRetreated()
+	{
+	}
+
 	private void CheckOffscreen()
 	{
+		if (Retreating && Position.Y < -80)
+		{
+			OnRetreated();
+			QueueFree();
+			return;
+		}
 		if (MovementPattern == MovementPattern.Hover)
 			return;
 		Vector2 vp = GetViewportRect().Size;

@@ -11,6 +11,7 @@ public partial class Main : Node2D
 		var hud = GetNode<HUD>("HUD");
 		var stageDirector = GetNode<StageDirector>("StageDirector");
 		stageDirector.BossSpawned += hud.ShowBossBar;
+		stageDirector.SectionStarted += OnSectionStarted;
 		stageDirector.StageCleared += OnStageCleared;
 	}
 
@@ -20,6 +21,13 @@ public partial class Main : Node2D
 		if (!IsInstanceValid(this) || !IsInsideTree())
 			return;
 		AddChild(GameOverOverlayScene.Instantiate());
+	}
+
+	private void OnSectionStarted(int index, string title, string subtitle, Color backdrop)
+	{
+		GetNode<HUD>("HUD").ShowSectionBanner(title, subtitle);
+		var rect = GetNode<ColorRect>("Backdrop");
+		CreateTween().TweenProperty(rect, "color", backdrop, 1.5);
 	}
 
 	private void OnStageCleared()

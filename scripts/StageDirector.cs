@@ -3,20 +3,27 @@ using Godot;
 
 public partial class StageDirector : Node2D
 {
+	[Signal] public delegate void SectionStartedEventHandler(int index, string title, string subtitle, Color backdrop);
 	[Signal] public delegate void BossSpawnedEventHandler(Boss boss);
 	[Signal] public delegate void StageClearedEventHandler();
 
 	[Export] public PackedScene EnemyBasicScene { get; set; } = GD.Load<PackedScene>("res://scenes/Enemies/EnemyBasic.tscn");
 	[Export] public PackedScene EnemyShooterScene { get; set; } = GD.Load<PackedScene>("res://scenes/Enemies/EnemyShooter.tscn");
-	[Export] public PackedScene BossScene { get; set; } = GD.Load<PackedScene>("res://scenes/Enemies/SerpentBoss.tscn");
 
+	// セクション開始時のタイトル表示中、敵を出さずに待つ秒数
+	private const double SectionIntroTime = 2.5;
+	// 中ボスがいなくなってから次のセクションへ移るまでの秒数(後で3D視点移動の演出に置き換える)
+	private const double SectionTransitionTime = 3.0;
+
+	private StageDef _stage = StageData.Stage1;
 	private Vector2 _screenSize;
 	private bool _running = true;
 
 	public override void _Ready()
 	{
 		_screenSize = GetViewportRect().Size;
-		RunStage();
+		// Main が SectionStarted などを接続し終えてから開始する
+		Callable.From(RunStage).CallDeferred();
 	}
 
 	public void Stop()
@@ -28,94 +35,100 @@ public partial class StageDirector : Node2D
 	private async Task<bool> Wait(double t)
 	{
 		await ToSignal(GetTree().CreateTimer(t), SceneTreeTimer.SignalName.Timeout);
+		return StillRunning();
+	}
+
+	private bool StillRunning()
+	{
 		return IsInstanceValid(this) && IsInsideTree() && _running;
-	}
-
-	private void SpawnBasic(float x, MovementPattern pattern = MovementPattern.Straight)
-	{
-		if (!_running)
-			return;
-		var e = EnemyBasicScene.Instantiate<Enemy>();
-		e.Position = new Vector2(x, -30);
-		e.MovementPattern = pattern;
-		e.MoveDir = Vector2.Down;
-		GetTree().CurrentScene.AddChild(e);
-	}
-
-	private void SpawnShooter(float x, float y, ShotPattern pattern, bool rice = false)
-	{
-		if (!_running)
-			return;
-		var e = EnemyShooterScene.Instantiate<EnemyShooter>();
-		e.Position = new Vector2(x, -30);
-		e.EntryTarget = new Vector2(x, y);
-		e.MovementPattern = MovementPattern.Hover;
-		e.ShotPattern = pattern;
-		e.UseRiceBullets = rice;
-		GetTree().CurrentScene.AddChild(e);
 	}
 
 	private async void RunStage()
 	{
-		if (!await Wait(1.5)) return;
-
-		// Wave 1: straight descent, staggered
-		for (int i = 0; i < 5; i++)
+		for (int i = 0; i < _stage.Sections.Count; i++)
 		{
-			SpawnBasic(60 + i * 70);
-			if (!await Wait(0.3)) return;
+			SectionDef section = _stage.Sections[i];
+			EmitSignal(SignalName.SectionStarted, i, section.Title, section.Subtitle, section.Backdrop);
+			if (!await Wait(SectionIntroTime)) return;
+
+			if (!await RunWaves(section)) return;
+
+			if (!await RunBoss(section.MidBossScene)) return;
+
+			if (section.StageBossScene != null)
+			{
+				if (!await Wait(2.0)) return;
+				if (!await RunBoss(section.StageBossScene)) return;
+				if (!await Wait(1.5)) return;
+				EmitSignal(SignalName.StageCleared);
+				return;
+			}
+
+			RetreatRemainingEnemies();
+			if (!await Wait(SectionTransitionTime)) return;
 		}
-		if (!await Wait(2.0)) return;
-
-		// Wave 2: sine weavers
-		for (int i = 0; i < 4; i++)
-		{
-			SpawnBasic(80 + i * 90, MovementPattern.Sine);
-			if (!await Wait(0.4)) return;
-		}
-		if (!await Wait(2.0)) return;
-
-		// Wave 3: aimed shooters flank the player
-		SpawnShooter(120, 120, ShotPattern.Aimed);
-		SpawnShooter(_screenSize.X - 120, 120, ShotPattern.Aimed);
-		if (!await Wait(4.0)) return;
-
-		// Wave 4: mixed pressure
-		for (int i = 0; i < 6; i++)
-		{
-			SpawnBasic(50 + i * 60, MovementPattern.Sine);
-			if (!await Wait(0.25)) return;
-		}
-		SpawnShooter(_screenSize.X / 2.0f, 100, ShotPattern.Spread, true);
-		if (!await Wait(5.0)) return;
-
-		// Wave 5: radial shooter squad
-		for (int i = 0; i < 3; i++)
-		{
-			SpawnShooter(80 + i * 160, 100 + (i % 2) * 40, ShotPattern.Radial);
-			if (!await Wait(0.6)) return;
-		}
-		if (!await Wait(6.0)) return;
-
-		SpawnBoss();
 	}
 
-	private void SpawnBoss()
+	private async Task<bool> RunWaves(SectionDef section)
 	{
-		var boss = BossScene.Instantiate<Boss>();
+		foreach (StageStep step in section.Waves)
+		{
+			switch (step)
+			{
+				case Pause p:
+					if (!await Wait(p.Seconds)) return false;
+					break;
+				case SpawnBasic b:
+					SpawnBasicEnemy(b);
+					break;
+				case SpawnShooter s:
+					SpawnShooterEnemy(s);
+					break;
+			}
+		}
+		return true;
+	}
+
+	// ボスを出し、撃破または退場するまで待つ
+	private async Task<bool> RunBoss(string scenePath)
+	{
+		var boss = GD.Load<PackedScene>(scenePath).Instantiate<Boss>();
 		boss.Position = new Vector2(_screenSize.X / 2.0f, -60);
 		boss.EntryTarget = new Vector2(_screenSize.X / 2.0f, 160);
 		boss.MovementPattern = MovementPattern.Hover;
 		GetTree().CurrentScene.AddChild(boss);
 		EmitSignal(SignalName.BossSpawned, boss);
-		boss.Defeated += OnBossDefeated;
+		await ToSignal(boss, Boss.SignalName.Gone);
+		return StillRunning();
 	}
 
-	private async void OnBossDefeated()
+	private void SpawnBasicEnemy(SpawnBasic b)
 	{
-		await ToSignal(GetTree().CreateTimer(1.5), SceneTreeTimer.SignalName.Timeout);
-		if (!IsInstanceValid(this) || !IsInsideTree())
-			return;
-		EmitSignal(SignalName.StageCleared);
+		var e = EnemyBasicScene.Instantiate<Enemy>();
+		e.Position = new Vector2(b.X, -30);
+		e.MovementPattern = b.Pattern;
+		e.MoveDir = Vector2.Down;
+		GetTree().CurrentScene.AddChild(e);
+	}
+
+	private void SpawnShooterEnemy(SpawnShooter s)
+	{
+		var e = EnemyShooterScene.Instantiate<EnemyShooter>();
+		e.Position = new Vector2(s.X, -30);
+		e.EntryTarget = new Vector2(s.X, s.Y);
+		e.MovementPattern = MovementPattern.Hover;
+		e.ShotPattern = s.Pattern;
+		e.UseRiceBullets = s.Rice;
+		GetTree().CurrentScene.AddChild(e);
+	}
+
+	// 定位置に居座る敵をセクション終了時に退場させる
+	private void RetreatRemainingEnemies()
+	{
+		foreach (Node n in GetTree().GetNodesInGroup("enemy"))
+		{
+			if (n is Enemy e && IsInstanceValid(e))
+				e.Retreat();
+		}
 	}
 }
