@@ -1,12 +1,12 @@
 # AGENTS.md — star_shooting
 
-Godot 4.3 製、縦画面(480x640)の2D見下ろし弾幕シューティング。
+Godot 4.7.2 製(2026-10-07 に 4.3 から更新)、縦画面(480x640)の2D見下ろし弾幕シューティング。
 すべてのシーン(.tscn)・スクリプト(C# .cs)・project.godot はエディタのGUI操作ではなく、テキストとして直接記述して作成している。
 
 ## 実行方法
 
-- スクリプトは C#(2026-10-07 に GDScript から移行)。**Godot 4.3 の .NET 版エディタ**と .NET 8 SDK が必要。初回はエディタ右上の「ビルド」でC#をビルドしてから再生する。
-- C# プロジェクト: `star_shooting.csproj` / `star_shooting.sln`(Godot.NET.Sdk 4.3.0, net8.0)。
+- スクリプトは C#(2026-10-07 に GDScript から移行)。**Godot 4.7.2 の .NET 版エディタ**と .NET 8 SDK が必要。初回はエディタ右上の「ビルド」でC#をビルドしてから再生する。
+- C# プロジェクト: `star_shooting.csproj` / `star_shooting.sln`(Godot.NET.Sdk 4.7.2, net8.0)。
 - `project.godot` の `run/main_scene` は `res://scenes/UI/TitleScreen.tscn`。
 - エディタで再生(▶)するとタイトル画面 → Z/Space/ゲームパッドAボタンでゲーム本編(`res://scenes/Main.tscn`)へ遷移。
 - 新規アセット(.svg)を追加した直後は `.import` キャッシュが無くロード時にパースエラーになることがあるため、一度エディタで開いて自動インポートさせてから実行確認すること。
@@ -73,5 +73,5 @@ scenes/
 
 - C# では `.tscn` に保存されるエクスポートプロパティ名が C# のメンバー名(PascalCase、例: `MaxHp`)になる。スクリプトのプロパティ名を変えたら `.tscn` 側も合わせること。
 - C# の `async void` 内で `await` した後は、シーン遷移でノードが解放されている可能性がある。`IsInstanceValid(this) && IsInsideTree()` を確認してから処理を続けること(StageDirector / Player / Main で実施済み)。
-- Godot 4.3 の C# は Web(HTML5)エクスポート非対応。
+- C# プロジェクトの Web(HTML5)エクスポートは制限がある(4.3 では非対応)。Web 向けに出す場合は使用中の Godot バージョンの対応状況を確認すること。
 - 新規SVGアセットは初回インポート前だと `ext_resource` の読み込みに失敗する。アセット追加後は一度エディタを起動してインポートを走らせてから動作確認すること。
