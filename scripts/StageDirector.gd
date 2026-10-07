@@ -6,7 +6,7 @@ signal stage_cleared
 
 @export var enemy_basic_scene: PackedScene = preload("res://scenes/Enemies/EnemyBasic.tscn")
 @export var enemy_shooter_scene: PackedScene = preload("res://scenes/Enemies/EnemyShooter.tscn")
-@export var boss_scene: PackedScene = preload("res://scenes/Enemies/Boss.tscn")
+@export var boss_scene: PackedScene = preload("res://scenes/Enemies/SerpentBoss.tscn")
 
 var screen_size: Vector2
 var running: bool = true
@@ -96,12 +96,8 @@ func _run_stage() -> void:
 func _spawn_boss() -> void:
 	var boss: Boss = boss_scene.instantiate()
 	boss.position = Vector2(screen_size.x / 2.0, -60)
-	boss.entry_target = Vector2(screen_size.x / 2.0, 130)
+	boss.entry_target = Vector2(screen_size.x / 2.0, 160)
 	boss.movement_pattern = "hover"
-	boss.max_hp = 400
-	boss.score_value = 5000
-	boss.fire_interval = 1.0
-	boss.bullet_speed = 150.0
 	get_tree().current_scene.add_child(boss)
 	boss_spawned.emit(boss)
 	boss.defeated.connect(_on_boss_defeated)

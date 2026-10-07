@@ -20,7 +20,7 @@ scenes/
   Main.tscn              ゲーム本編(背景・自機・StageDirector・HUD)
   Player.tscn             自機
   Bullets/                自機弾・敵弾(丸/米粒)シーン
-  Enemies/                雑魚(EnemyBasic)・ショット持ち(EnemyShooter)・ボス(Boss)
+  Enemies/                雑魚(EnemyBasic)・ショット持ち(EnemyShooter)・ボス(Boss)・多関節ボス(SerpentBoss/BossSegment)
   Effects/                爆発・被弾スパーク等のワンショットエフェクト
   UI/                     タイトル・HUD・ゲームオーバー・クリア画面
 ```
@@ -34,9 +34,10 @@ scenes/
   - `scripts/Enemy.gd`: 基底クラス。HP・移動パターン(`straight` / `sine` / `hover`)・被弾処理・撃破時の爆発とスコア加算。
   - `scripts/EnemyShooter.gd`: Enemyを継承し弾幕パターン(`aimed` / `radial` / `spiral` / `spread`)を追加。
   - `scripts/Boss.gd`: EnemyShooterを継承。HPに応じて`phase_patterns`配列の弾幕パターンへ切り替わる多段階ボス。HP変化を`hp_changed`シグナルでHUDのボスゲージへ反映。
-- **StageDirector (`scripts/StageDirector.gd`)**: `await get_tree().create_timer()` を使ったコルーチンでウェーブをタイムライン管理し、最後にボスを出現させる。
+  - `scripts/MultiJointBoss.gd`(`scenes/Enemies/SerpentBoss.tscn`): Bossを継承した多関節(蛇型)ボス。頭の`global_position`を毎フレーム`history`配列に記録し、`scripts/BossSegment.gd`の胴体セグメント(`scenes/Enemies/BossSegment.tscn`、個別HPを持ち被弾で破壊可能)が`segment_gap`フレーム分ディレイした履歴座標を追従することで、頭に連なってうねる胴体を実現(古典的な「先頭追従」スネーク方式)。`_update_movement`をオーバーライドし、進入後はLissajous的な正弦波軌道で画面上部を漂う。頭のHPが尽きる(`die()`)と残ったセグメントもまとめて解放してボス撃破。HPバー等のシグナルはBossからそのまま継承。
+- **StageDirector (`scripts/StageDirector.gd`)**: `await get_tree().create_timer()` を使ったコルーチンでウェーブをタイムライン管理し、最後に`SerpentBoss`(多関節ボス)を出現させる。
 - **HUD (`scripts/HUD.gd` + `scenes/UI/HUD.tscn`)**: スコア・残機表示、ボス出現時のみ表示されるHPバー。
-- **画面遷移**: `TitleScreen` → `Main` → (被弾で残機0) `GameOverScreen` / (ボス撃破) `ClearScreen` → `TitleScreen` に戻る。
+- **画面遷移**: `TitleScreen` → `Main` → (ボス撃破) `ClearScreen` → `TitleScreen` に戻る。残機0で自機が撃墜されても`Main`シーンからは遷移せず、`StageDirector`は止めずに動かし続けたまま`GameOverOverlay`(`scripts/GameOverOverlay.gd` + `scenes/UI/GameOverOverlay.tscn`)を`Main`に追加でオーバーレイ表示する。自機が消えただけでステージが進行し続ける昔のアーケード/コンシューマー機の「ゲームオーバー後も敵がプレイを続ける」演出。ボタン入力で`TitleScreen`へ戻る。
 
 ## エフェクト
 

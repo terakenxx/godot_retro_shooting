@@ -12,9 +12,9 @@ func _ready() -> void:
 
 
 func on_player_died() -> void:
-	stage_director.stop()
 	await get_tree().create_timer(1.5).timeout
-	get_tree().change_scene_to_file("res://scenes/UI/GameOverScreen.tscn")
+	var overlay: CanvasLayer = preload("res://scenes/UI/GameOverOverlay.tscn").instantiate()
+	add_child(overlay)
 
 
 func _on_stage_cleared() -> void:
